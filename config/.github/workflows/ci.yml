@@ -1,0 +1,24 @@
+name: ci
+on: [push]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependency scan (SCA)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: 1
+
+      - name: Secret scan
+        run: |
+          if grep -rEq --exclude-dir=.github 'AKIA[0-9A-Z]{16}' .; then
+            echo "::error::Possible AWS access key found"
+            exit 1
+          fi
+          echo "No secrets found"
